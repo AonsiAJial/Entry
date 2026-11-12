@@ -69,20 +69,8 @@
                 منصة ادخال بيانات السجل الاحصائي لمنظومة اجيال
             </p>
 
-            <!-- شريط الإحصائيات السريعة وإرشادات الاستخدام -->
+            <!-- شارة عدد الشعب الدراسية -->
             <div class="flex flex-wrap items-center justify-center gap-4 max-w-2xl mx-auto">
-                <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-6 py-3 flex items-center gap-3 shadow-lg">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-xs text-slate-300 font-medium">إجمالي زيارات نماذج المدرسة</div>
-                        <div id="total-school-visitors" class="text-xl sm:text-2xl font-extrabold text-white">0</div>
-                    </div>
-                </div>
-
                 <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-6 py-3 flex items-center gap-3 shadow-lg">
                     <div class="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +160,7 @@
         </div>
         <div>
             <div id="toast-title" class="font-bold text-sm text-white">جاري فتح النموذج...</div>
-            <div id="toast-subtitle" class="text-xs text-slate-300 mt-0.5">تم تسجيل زيارتك بنجاح</div>
+            <div id="toast-subtitle" class="text-xs text-slate-300 mt-0.5">نتمنى لكم التوفيق</div>
         </div>
     </div>
 
@@ -184,12 +172,8 @@
         </div>
     </footer>
 
-    <!-- السكربت الخاص بالبيانات، التفاعل، وربط قاعدة البيانات السحابية الفورية (Firebase Firestore) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, increment, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+    <!-- السكربت الخاص بالبيانات والتفاعل -->
+    <script>
         // تعيين السنة الحالية في التذييل
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
@@ -223,15 +207,8 @@
             { id: '9-a', grade: '9', gradeTitle: 'الصف التاسع الأساسي', name: 'تاسع أ', section: 'أ', url: 'https://docs.google.com/forms/d/e/1FAIpQLSefl8CUU_0gYNop_eyJDy3pCtSed2MYYVxA6aJqG9BhNveGhw/viewform?usp=header' }
         ];
 
-        // حالة العدادات في الذاكرة
-        const visitorCounts = {};
-        classesData.forEach(c => visitorCounts[c.id] = 0);
-
         let activeFilter = 'all';
         let searchQuery = '';
-        let db = null;
-        let currentUser = null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mohammed-alansi-school';
 
         // ألوان مميزة لكل مرحلة دراسية لسهولة التمييز البصري
         const gradeStyles = {
@@ -241,21 +218,12 @@
             '9': { badgeBg: 'bg-amber-100 text-amber-900', borderAccent: 'border-amber-600', iconBg: 'bg-amber-700 text-white' }
         };
 
-        // دالة تحديث إجمالي زيارات المدرسة
-        function updateTotalCounter() {
-            const total = Object.values(visitorCounts).reduce((sum, val) => sum + (Number(val) || 0), 0);
-            const totalEl = document.getElementById('total-school-visitors');
-            if (totalEl) {
-                totalEl.textContent = total.toLocaleString('ar-JO');
-            }
-        }
-
         // دالة إظهار الإشعار المنبثق عند النقر
         let toastTimeout;
         function showToast(className) {
             const toast = document.getElementById('toast-notification');
-            document.getElementById('toast-title').textContent = `تم فتح نموذج (${className})`;
-            document.getElementById('toast-subtitle').textContent = 'تم تحديث عداد الزوار بنجاح';
+            document.getElementById('toast-title').textContent = `جاري فتح نموذج (${className})`;
+            document.getElementById('toast-subtitle').textContent = 'يرجى تعبئة البيانات بدقة';
             
             toast.classList.remove('translate-y-24', 'opacity-0');
             toast.classList.add('translate-y-0', 'opacity-100');
@@ -265,32 +233,6 @@
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-24', 'opacity-0');
             }, 3500);
-        }
-
-        // دالة تسجيل الزيارة وتحديث العداد في قاعدة البيانات والواجهة
-        async function handleClassVisit(classItem) {
-            // تحديث فوري في الواجهة لتجربة مستخدم سلسة
-            visitorCounts[classItem.id] = (visitorCounts[classItem.id] || 0) + 1;
-            const countSpan = document.getElementById(`count-${classItem.id}`);
-            if (countSpan) {
-                countSpan.textContent = visitorCounts[classItem.id].toLocaleString('ar-JO');
-            }
-            updateTotalCounter();
-            showToast(classItem.name);
-
-            // حفظ الزيادة في Firestore إذا كان متاحاً ومصادقاً عليه
-            if (db && currentUser) {
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'class_visitors', classItem.id);
-                    await setDoc(docRef, {
-                        className: classItem.name,
-                        count: increment(1),
-                        lastVisited: new Date().toISOString()
-                    }, { merge: true });
-                } catch (err) {
-                    console.error('خطأ أثناء تحديث العداد السحابي:', err);
-                }
-            }
         }
 
         // دالة بناء وعرض البطاقات في الصفحة
@@ -350,8 +292,6 @@
                     card.rel = 'noopener noreferrer';
                     card.className = `group bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden transform hover:-translate-y-1`;
 
-                    const currentCount = (visitorCounts[classItem.id] || 0).toLocaleString('ar-JO');
-
                     card.innerHTML = `
                         <!-- شريط علوي ملون -->
                         <div class="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-l from-blue-900 to-emerald-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
@@ -374,7 +314,7 @@
                             </p>
                         </div>
 
-                        <div class="space-y-4">
+                        <div>
                             <!-- زر الدخول المباشر -->
                             <div class="w-full py-3 px-4 rounded-xl bg-slate-900 group-hover:bg-emerald-600 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-colors shadow-sm">
                                 <span>دخول وتعبئة النموذج</span>
@@ -382,26 +322,12 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                                 </svg>
                             </div>
-
-                            <!-- عداد الزوار أسفل الرابط -->
-                            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm text-slate-600">
-                                <div class="flex items-center gap-1.5 font-semibold">
-                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                    </svg>
-                                    <span>عدد الزوار الذين قاموا بفتحه:</span>
-                                </div>
-                                <span id="count-${classItem.id}" class="font-extrabold text-blue-950 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-100">
-                                    ${currentCount}
-                                </span>
-                            </div>
                         </div>
                     `;
 
-                    // تسجيل الزيارة عند النقر على البطاقة
+                    // إظهار الإشعار عند النقر على البطاقة
                     card.addEventListener('click', () => {
-                        handleClassVisit(classItem);
+                        showToast(classItem.name);
                     });
 
                     gridEl.appendChild(card);
@@ -432,51 +358,6 @@
 
         // العرض الأولي للصفحة
         renderGrades();
-
-        // تهيئة الاتصال السحابي لمزامنة عداد الزوار بين جميع الزوار في الوقت الفعلي
-        async function initCloudCounters() {
-            try {
-                if (typeof __firebase_config === 'undefined') return;
-                const firebaseConfig = JSON.parse(__firebase_config);
-                const app = initializeApp(firebaseConfig);
-                const auth = getAuth(app);
-                db = getFirestore(app);
-
-                // المصادقة أولاً قبل أي استعلام
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
-                    currentUser = cred.user;
-                } else {
-                    const cred = await signInAnonymously(auth);
-                    currentUser = cred.user;
-                }
-
-                if (!currentUser) return;
-
-                // الاستماع للتحديثات الفورية لعدادات جميع الشعب
-                const visitorsCol = collection(db, 'artifacts', appId, 'public', 'data', 'class_visitors');
-                onSnapshot(visitorsCol, (snapshot) => {
-                    snapshot.forEach((docSnap) => {
-                        const data = docSnap.data();
-                        if (typeof data.count === 'number') {
-                            visitorCounts[docSnap.id] = data.count;
-                            const el = document.getElementById(`count-${docSnap.id}`);
-                            if (el) {
-                                el.textContent = data.count.toLocaleString('ar-JO');
-                            }
-                        }
-                    });
-                    updateTotalCounter();
-                }, (error) => {
-                    console.error('خطأ في الاستماع لبيانات العدادات:', error);
-                });
-
-            } catch (error) {
-                console.error('تعذر تهيئة المزامنة السحابية:', error);
-            }
-        }
-
-        initCloudCounters();
     </script>
 </body>
 </html>
